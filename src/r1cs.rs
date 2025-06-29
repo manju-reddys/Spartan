@@ -14,6 +14,7 @@ use flate2::{write::ZlibEncoder, Compression};
 use merlin::Transcript;
 use rand::rngs::OsRng;
 use serde::{Deserialize, Serialize};
+use std::io::Write;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct R1CSShape {
@@ -153,7 +154,8 @@ impl R1CSShape {
 
   pub fn get_digest(&self) -> Vec<u8> {
     let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
-    bincode::serialize_into(&mut encoder, &self).unwrap();
+    let encoded = bincode::serde::encode_to_vec(&self, bincode::config::standard()).unwrap();
+    encoder.write_all(&encoded).unwrap();
     encoder.finish().unwrap()
   }
 
