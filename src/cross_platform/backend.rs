@@ -4,6 +4,7 @@
 
 use super::*;
 use super::native_opt::AdvancedNativeBackend;
+use super::spartan_integration::SpartanIntegration;
 use crate::dense_mlpoly::DensePolynomial;
 use crate::sumcheck::SumcheckInstanceProof;
 use crate::timer::Timer;
@@ -14,6 +15,7 @@ pub struct NativeBackend {
     parallel_enabled: bool,
     optimization_level: OptimizationLevel,
     advanced_backend: Option<AdvancedNativeBackend>,
+    spartan_integration: Option<SpartanIntegration>,
 }
 
 /// Optimization levels for native backend
@@ -56,6 +58,7 @@ impl NativeBackend {
             parallel_enabled,
             optimization_level,
             advanced_backend,
+            spartan_integration: None, // Will be configured when problem size is known
         }
     }
     
@@ -73,6 +76,7 @@ impl NativeBackend {
             parallel_enabled: caps.core_count > 1,
             optimization_level: level,
             advanced_backend,
+            spartan_integration: None,
         }
     }
     
@@ -218,6 +222,15 @@ impl NativeBackend {
                 cpu_usage_percent: detailed_metrics.parallel_efficiency * 100.0,
                 gpu_usage_percent: None,
             },
+            instance_digest: r1cs.get_digest(),
+            proving_mode: super::spartan_integration::ProvingMode::NIZK, // Default for NativeBackend
+            problem_params: super::spartan_integration::ProblemParameters {
+                num_cons: r1cs.get_num_cons(),
+                num_vars: r1cs.get_num_vars(),
+                num_inputs: r1cs.get_num_inputs(),
+                num_nz_entries: 0, // Would need to be calculated
+            },
+            computation_commitment: None, // NativeBackend uses NIZK by default, no commitment needed
         })
     }
 }
@@ -267,6 +280,15 @@ impl SpartanBackend for NativeBackend {
                 cpu_usage_percent: 0.0,
                 gpu_usage_percent: None,
             },
+            instance_digest: r1cs.get_digest(),
+            proving_mode: super::spartan_integration::ProvingMode::NIZK, // Default for basic backend
+            problem_params: super::spartan_integration::ProblemParameters {
+                num_cons: r1cs.get_num_cons(),
+                num_vars: r1cs.get_num_vars(),
+                num_inputs: r1cs.get_num_inputs(),
+                num_nz_entries: 0, // Would need to be calculated
+            },
+            computation_commitment: None, // Basic backend uses NIZK by default, no commitment needed
         })
     }
     

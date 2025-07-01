@@ -16,7 +16,7 @@ use rand::rngs::OsRng;
 use serde::{Deserialize, Serialize};
 use std::io::Write;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct R1CSShape {
   num_cons: usize,
   num_vars: usize,

@@ -21,6 +21,12 @@ pub mod native_opt;
 pub mod tests;
 
 pub mod benchmarks;
+pub mod spartan_integration;
+pub mod integrated_backends;
+
+// Re-export key types for easier access
+pub use integrated_backends::{IntegratedSpartanCrossPlatform, IntegratedNativeBackend};
+pub use spartan_integration::{ProvingMode, ProblemParameters};
 
 #[cfg(feature = "gpu")]
 pub mod gpu;
@@ -145,12 +151,16 @@ pub struct MemoryStats {
     pub pool_efficiency: f64,
 }
 
-/// Spartan proof structure (simplified for cross-platform use)
+/// Enhanced Spartan proof structure for cross-platform use
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SpartanProof {
     pub commitments: Vec<crate::group::GroupElement>,
     pub sumcheck_proof: Vec<u8>, // Serialized proof data
     pub timing_info: PerformanceMetrics,
+    pub instance_digest: Vec<u8>, // Store instance digest for verification
+    pub proving_mode: crate::cross_platform::spartan_integration::ProvingMode, // Store which mode was used
+    pub problem_params: crate::cross_platform::spartan_integration::ProblemParameters, // Store problem parameters
+    pub computation_commitment: Option<Vec<u8>>, // Serialized ComputationCommitment for SNARK verification
 }
 
 impl SpartanCrossPlatform {

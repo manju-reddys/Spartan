@@ -16,7 +16,7 @@ use core::cmp::Ordering;
 use merlin::Transcript;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SparseMatEntry {
   row: usize,
   col: usize,
@@ -29,7 +29,7 @@ impl SparseMatEntry {
   }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SparseMatPolynomial {
   num_vars_x: usize,
   num_vars_y: usize,
