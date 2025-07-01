@@ -30,6 +30,9 @@ mod timer;
 mod transcript;
 mod unipoly;
 
+#[cfg(feature = "cross-platform")]
+pub mod cross_platform;
+
 use core::cmp::max;
 use errors::{ProofVerifyError, R1CSError};
 use merlin::Transcript;

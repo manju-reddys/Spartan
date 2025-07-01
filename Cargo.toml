@@ -30,8 +30,23 @@ itertools = { version = "0.14.0", default-features = false }
 colored = { version = "2.0.0", default-features = false, optional = true }
 flate2 = { version = "1.1.2" }
 
+# Cross-platform GPU acceleration (optional)
+wgpu = { version = "0.20", optional = true, features = ["webgl"] }
+
+# Memory management utilities
+lru = { version = "0.12", optional = true }
+
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 getrandom = { version = "0.2.15", default-features = false, features = ["js"] }
+wasm-bindgen = { version = "0.2", optional = true }
+js-sys = { version = "0.3", optional = true }
+web-sys = { version = "0.3", features = ["WebGl2RenderingContext"], optional = true }
+
+[target.'cfg(target_os = "android")'.dependencies]
+jni = { version = "0.21", optional = true }
+
+[target.'cfg(target_os = "ios")'.dependencies]
+objc = { version = "0.2", optional = true }
 
 [dev-dependencies]
 criterion = "0.3.1"
@@ -76,3 +91,21 @@ std = [
 ]
 multicore = ["rayon"]
 profile = ["colored"]
+
+# Cross-platform features
+cross-platform = ["lru"]
+gpu = ["wgpu", "cross-platform"]
+wasm = ["wasm-bindgen", "js-sys", "web-sys", "cross-platform"]
+mobile = ["cross-platform"]
+android = ["mobile", "jni"]
+ios = ["mobile", "objc"]
+
+# SIMD optimization features
+simd = []
+avx2 = ["simd"]
+avx512 = ["simd"]
+neon = ["simd"]
+
+# Performance features
+aggressive-opts = ["simd", "multicore"]
+balanced-opts = ["multicore"]

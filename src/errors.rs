@@ -24,6 +24,12 @@ impl Display for ProofVerifyError {
   }
 }
 
+impl From<R1CSError> for ProofVerifyError {
+  fn from(_: R1CSError) -> Self {
+    ProofVerifyError::InternalError
+  }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum R1CSError {
   /// returned if the number of constraints is not a power of 2
