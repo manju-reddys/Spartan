@@ -18,12 +18,14 @@ mod dense_mlpoly;
 mod errors;
 mod group;
 mod math;
+mod mobile;
 mod nizk;
 mod product_tree;
 mod r1cs;
 mod r1csproof;
 mod random;
-mod scalar;
+/// Scalar field arithmetic for the ristretto255 curve
+pub mod scalar;
 mod sparse_mlpoly;
 mod sumcheck;
 mod timer;
@@ -33,6 +35,7 @@ mod unipoly;
 use core::cmp::max;
 use errors::{ProofVerifyError, R1CSError};
 use merlin::Transcript;
+use mobile::{create_zeros_vector, create_vector_with_value};
 use r1cs::{R1CSCommitment, R1CSCommitmentGens, R1CSDecommitment, R1CSEvalProof, R1CSShape};
 use r1csproof::{R1CSGens, R1CSProof};
 use random::RandomTape;
@@ -40,6 +43,7 @@ use scalar::Scalar;
 use serde::{Deserialize, Serialize};
 use timer::Timer;
 use transcript::{AppendToTranscript, ProofTranscript};
+
 
 /// `ComputationCommitment` holds a public preprocessed NP statement (e.g., R1CS)
 #[derive(Serialize, Deserialize)]
@@ -94,7 +98,10 @@ impl Assignment {
 
     let padded_assignment = {
       let mut padded_assignment = self.assignment.clone();
-      padded_assignment.extend(vec![Scalar::zero(); len - self.assignment.len()]);
+      // Use mobile-optimized vector for large padding allocations
+      let padding_size = len - self.assignment.len();
+      let padding_internal = create_zeros_vector(padding_size);
+      padded_assignment.extend(padding_internal.to_vec());
       padded_assignment
     };
 
@@ -748,6 +755,40 @@ mod tests {
     let mut verifier_transcript = Transcript::new(b"nizk_example");
     assert!(proof
       .verify(&inst, &assignment_inputs, &mut verifier_transcript, &gens)
+      .is_ok());
+  }
+
+  #[test]
+  fn test_mobile_optimizations_transparent() {
+    // Test that mobile optimizations work transparently through the public API
+    // This test should work identically regardless of mobile feature flag
+    
+    // Use the same synthetic R1CS approach as check_snark but smaller
+    let num_cons = 8;
+    let num_vars = 8;
+    let num_inputs = 2;
+
+    // Generate a synthetic R1CS instance
+    let (inst, vars, inputs) = Instance::produce_synthetic_r1cs(num_cons, num_vars, num_inputs);
+
+    // Test SNARK workflow (same as existing test but with mobile optimizations)
+    let gens = SNARKGens::new(num_cons, num_vars, num_inputs, num_cons);
+    let (comm, decomm) = SNARK::encode(&inst, &gens);
+
+    let mut prover_transcript = Transcript::new(b"mobile_test");
+    let proof = SNARK::prove(
+      &inst,
+      &comm,
+      &decomm,
+      vars,
+      &inputs,
+      &gens,
+      &mut prover_transcript,
+    );
+
+    let mut verifier_transcript = Transcript::new(b"mobile_test");
+    assert!(proof
+      .verify(&comm, &inputs, &mut verifier_transcript, &gens)
       .is_ok());
   }
 }

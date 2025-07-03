@@ -3,6 +3,7 @@ use super::commitments::{Commitments, MultiCommitGens};
 use super::errors::ProofVerifyError;
 use super::group::{CompressedGroup, GroupElement, VartimeMultiscalarMul};
 use super::math::Math;
+use super::mobile::{create_ones_vector, create_zeros_vector};
 use super::nizk::{DotProductProofGens, DotProductProofLog};
 use super::random::RandomTape;
 use super::scalar::Scalar;
@@ -68,19 +69,21 @@ impl EqPolynomial {
   pub fn evals(&self) -> Vec<Scalar> {
     let ell = self.r.len();
 
-    let mut evals: Vec<Scalar> = vec![Scalar::one(); ell.pow2()];
+    // Use mobile-optimized vector allocation for large exponential sizes
+    let mut evals_internal = create_ones_vector(ell.pow2());
     let mut size = 1;
     for j in 0..ell {
       // in each iteration, we double the size of chis
       size *= 2;
       for i in (0..size).rev().step_by(2) {
         // copy each element from the prior iteration twice
-        let scalar = evals[i / 2];
-        evals[i] = scalar * self.r[j];
-        evals[i - 1] = scalar - evals[i];
+        let scalar = evals_internal.index(i / 2);
+        evals_internal.set(i, scalar * self.r[j]);
+        evals_internal.set(i - 1, scalar - evals_internal.index(i));
       }
     }
-    evals
+    // Convert back to Vec<Scalar> for API compatibility
+    evals_internal.to_vec()
   }
 
   pub fn compute_factored_lens(ell: usize) -> (usize, usize) {
@@ -196,7 +199,7 @@ impl DensePolynomial {
       }
     } else {
       PolyCommitmentBlinds {
-        blinds: vec![Scalar::zero(); L_size],
+        blinds: create_zeros_vector(L_size).to_vec(),
       }
     };
 
@@ -329,7 +332,7 @@ impl PolyEvalProof {
     let R_size = right_num_vars.pow2();
 
     let default_blinds = PolyCommitmentBlinds {
-      blinds: vec![Scalar::zero(); L_size],
+      blinds: create_zeros_vector(L_size).to_vec(),
     };
     let blinds = blinds_opt.map_or(&default_blinds, |p| p);
 

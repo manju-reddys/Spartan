@@ -6,6 +6,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Spartan is a high-speed zero-knowledge proof system implementing zkSNARKs without trusted setup. This is a Rust library (`libspartan`) implementing transparent zero-knowledge succinct non-interactive arguments of knowledge (zkSNARKs) based on the discrete logarithm problem.
 
+## Examples how to use this library
+
+Refer to examples/{nizk,snark}.rs 
+
+```bash
+cargo run --example nizk
+cargo run --example snark
+
 ## Build Commands
 
 ### Basic Build
@@ -89,7 +97,8 @@ cargo build --release --features=profile
 - Leverages `merlin` crate for transcript management
 - Supports both std and no-std environments
 - Optional multicore support via `rayon` feature
-- WASM compatibility
+- iOS and Android support is highest priority than WASM compatibility
+- 
 
 ### Dependencies
 

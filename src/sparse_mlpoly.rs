@@ -7,6 +7,7 @@ use super::dense_mlpoly::{
 };
 use super::errors::ProofVerifyError;
 use super::math::Math;
+use super::mobile::create_zeros_vector;
 use super::product_tree::{DotProductCircuit, ProductCircuit, ProductCircuitEvalProofBatched};
 use super::random::RandomTape;
 use super::scalar::Scalar;
@@ -357,7 +358,7 @@ impl SparseMatPolynomial {
     assert!(N >= self.get_num_nz_entries());
     let mut ops_row: Vec<usize> = vec![0; N];
     let mut ops_col: Vec<usize> = vec![0; N];
-    let mut val: Vec<Scalar> = vec![Scalar::zero(); N];
+    let mut val: Vec<Scalar> = create_zeros_vector(N).to_vec();
 
     for i in 0..self.M.len() {
       ops_row[i] = self.M[i].row;
@@ -454,13 +455,13 @@ impl SparseMatPolynomial {
   pub fn multiply_vec(&self, num_rows: usize, num_cols: usize, z: &[Scalar]) -> Vec<Scalar> {
     assert_eq!(z.len(), num_cols);
 
-    self.M.iter().fold(
-      vec![Scalar::zero(); num_rows],
-      |mut Mz, SparseMatEntry { row, col, val }| {
-        Mz[*row] += val * z[*col];
-        Mz
-      },
-    )
+    // Use mobile-optimized vector for potentially large matrix results
+    let mut mz_internal = create_zeros_vector(num_rows);
+    for SparseMatEntry { row, col, val } in &self.M {
+      let current = mz_internal.index(*row);
+      mz_internal.set(*row, current + val * z[*col]);
+    }
+    mz_internal.to_vec()
   }
 
   pub fn compute_eval_table_sparse(
@@ -471,13 +472,13 @@ impl SparseMatPolynomial {
   ) -> Vec<Scalar> {
     assert_eq!(rx.len(), num_rows);
 
-    self.M.iter().fold(
-      vec![Scalar::zero(); num_cols],
-      |mut M_evals, SparseMatEntry { row, col, val }| {
-        M_evals[*col] += rx[*row] * val;
-        M_evals
-      },
-    )
+    // Use mobile-optimized vector for eval table  
+    let mut m_evals_internal = create_zeros_vector(num_cols);
+    for SparseMatEntry { row, col, val } in &self.M {
+      let current = m_evals_internal.index(*col);
+      m_evals_internal.set(*col, current + rx[*row] * val);
+    }
+    m_evals_internal.to_vec()
   }
 
   pub fn multi_commit(
@@ -1430,13 +1431,13 @@ impl SparseMatPolyEvalProof {
     match rx.len().cmp(&ry.len()) {
       Ordering::Less => {
         let diff = ry.len() - rx.len();
-        let mut rx_ext = vec![Scalar::zero(); diff];
+        let mut rx_ext = create_zeros_vector(diff).to_vec();
         rx_ext.extend(rx);
         (rx_ext, ry.to_vec())
       }
       Ordering::Greater => {
         let diff = rx.len() - ry.len();
-        let mut ry_ext = vec![Scalar::zero(); diff];
+        let mut ry_ext = create_zeros_vector(diff).to_vec();
         ry_ext.extend(ry);
         (rx.to_vec(), ry_ext)
       }
