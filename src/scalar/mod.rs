@@ -1,9 +1,14 @@
 mod ristretto255;
 
+/// Main scalar type used throughout Spartan
 pub type Scalar = ristretto255::Scalar;
+
+/// Byte representation of scalars
 pub type ScalarBytes = curve25519_dalek::scalar::Scalar;
 
+/// Trait for converting primitive types to Scalar
 pub trait ScalarFromPrimitives {
+  /// Convert to Scalar
   fn to_scalar(self) -> Scalar;
 }
 
@@ -25,7 +30,9 @@ impl ScalarFromPrimitives for bool {
   }
 }
 
+/// Trait for converting Scalar to ScalarBytes  
 pub trait ScalarBytesFromScalar {
+  /// Decompress a Scalar to ScalarBytes
   fn decompress_scalar(s: &Scalar) -> ScalarBytes;
 }
 

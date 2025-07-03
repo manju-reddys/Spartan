@@ -6,6 +6,7 @@ use super::dense_mlpoly::{
 use super::errors::ProofVerifyError;
 use super::group::{CompressedGroup, GroupElement, VartimeMultiscalarMul};
 use super::math::Math;
+use super::mobile::{create_zeros_vector, create_ones_vector};
 use super::nizk::{EqualityProof, KnowledgeProof, ProductProof};
 use super::r1cs::R1CSShape;
 use super::random::RandomTape;
@@ -180,7 +181,10 @@ impl R1CSProof {
       let mut z = vars;
       z.extend(&vec![Scalar::one()]); // add constant term in z
       z.extend(input);
-      z.extend(&vec![Scalar::zero(); num_vars - num_inputs - 1]); // we will pad with zeros
+      // Use mobile-optimized vector for large zero padding
+      let padding_size = num_vars - num_inputs - 1;
+      let padding_internal = create_zeros_vector(padding_size);
+      z.extend(padding_internal.to_vec()); // we will pad with zeros
       z
     };
 
@@ -538,14 +542,18 @@ mod tests {
     let z4 = (z1 + i1) * z3; // constraint 2: (Z1 + I1) * (Z3) - Z4 = 0
     let z5 = Scalar::zero(); //constraint 3
 
-    let mut vars = vec![Scalar::zero(); num_vars];
+    // Use mobile-optimized vector for large variable arrays
+    let vars_internal = create_zeros_vector(num_vars);
+    let mut vars = vars_internal.to_vec();
     vars[0] = z1;
     vars[1] = z2;
     vars[2] = z3;
     vars[3] = z4;
     vars[4] = z5;
 
-    let mut input = vec![Scalar::zero(); num_inputs];
+    // Use mobile-optimized vector for input arrays
+    let input_internal = create_zeros_vector(num_inputs);
+    let mut input = input_internal.to_vec();
     input[0] = i0;
     input[1] = i1;
 

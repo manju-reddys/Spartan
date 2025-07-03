@@ -197,11 +197,11 @@ impl ProductProof {
     beta.append_to_transcript(b"beta", transcript);
 
     let delta = {
-      let gens_X = &MultiCommitGens {
-        n: 1,
-        G: vec![X.decompress().unwrap()],
-        h: gens_n.h,
-      };
+      let gens_X = &MultiCommitGens::from_parts(
+        1,
+        vec![X.decompress().unwrap()],
+        gens_n.h,
+      );
       b3.commit(&b5, gens_X).compress()
     };
     delta.append_to_transcript(b"delta", transcript);
@@ -273,11 +273,11 @@ impl ProductProof {
         &self.delta,
         Z,
         &c,
-        &MultiCommitGens {
-          n: 1,
-          G: vec![X.unpack()?],
-          h: gens_n.h,
-        },
+        &MultiCommitGens::from_parts(
+          1,
+          vec![X.unpack()?],
+          gens_n.h,
+        ),
         &z3,
         &z5,
       )
@@ -493,11 +493,11 @@ impl DotProductProofLog {
     let y_hat = x_hat * a_hat;
 
     let delta = {
-      let gens_hat = MultiCommitGens {
-        n: 1,
-        G: vec![g_hat],
-        h: gens.gens_1.h,
-      };
+      let gens_hat = MultiCommitGens::from_parts(
+        1,
+        vec![g_hat],
+        gens.gens_1.h,
+      );
       d.commit(&r_delta, &gens_hat).compress()
     };
     delta.append_to_transcript(b"delta", transcript);
